@@ -1,0 +1,58 @@
+import discord
+import random
+
+# Токен вашего бота Discord
+TOKEN = 'YOUR_DISCORD_BOT_TOKEN'
+
+# Префикс для активации команд бота
+PREFIX = '!'
+
+# Создаем экземпляр клиента Discord
+client = discord.Client()
+
+# Список изображений для капчи
+captcha_images = [
+    'https://example.com/image1.png',
+    'https://example.com/image2.png',
+    'https://example.com/image3.png',
+    # Добавьте здесь свои изображения для капчи
+]
+
+# Словарь для хранения правильных ответов на капчу
+captcha_answers = {}
+
+# Функция для генерации капчи с изображениями
+def generate_captcha():
+    captcha_choices = random.sample(captcha_images, 3)
+    return captcha_choices
+
+@client.event
+async def on_ready():
+    print(f'Бот {client.user} готов к работе')
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.content.startswith(PREFIX) and message.content.lower() == f'{PREFIX}captcha':
+        # Генерируем капчу для пользователя
+        captcha_images = generate_captcha()
+        captcha_answers[message.author.id] = captcha_images[0]
+
+        # Отправляем изображения капчи пользователю
+        captcha_text = '\n'.join([f'{index + 1}. {image}' for index, image in enumerate(captcha_images)])
+        await message.author.send(f'Пройдите капчу и выберите правильное изображение:\n{captcha_text}')
+
+    # Проверка капчи
+    if message.author.id in captcha_answers.keys():
+        user_choice = message.content
+
+        if user_choice == captcha_answers[message.author.id]:
+            del captcha_answers[message.author.id]
+            await message.author.send('Капча пройдена успешно!')
+        else:
+            await message.author.send('Неверная капча, попробуйте еще раз.')
+
+# Запуск бота
+client.run(TOKEN)
